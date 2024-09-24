@@ -1,12 +1,11 @@
+import Random "mo:base/Random";
 import Text "mo:base/Text";
 
 import Array "mo:base/Array";
-import Random "mo:base/Random";
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
-import Nat8 "mo:base/Nat8";
+import Time "mo:base/Time";
 import Debug "mo:base/Debug";
-import Error "mo:base/Error";
 
 actor DadJokeGenerator {
     stable var jokes : [Text] = [
@@ -22,24 +21,23 @@ actor DadJokeGenerator {
         "Why do programmers prefer dark mode? Light attracts bugs!"
     ];
 
-    public func getRandomJoke() : async Text {
+    var seed : Nat = 123456789;
+
+    // Simple pseudo-random number generator
+    func nextRandom() : Nat {
+        seed := (1103515245 * seed + 12345) % (2**31);
+        seed
+    };
+
+    public query func getRandomJoke() : async Text {
+        Debug.print("getRandomJoke called");
         let jokeCount = jokes.size();
         if (jokeCount == 0) {
+            Debug.print("No jokes available");
             return "Sorry, I'm all out of jokes!";
         };
 
-        var randomIndex = 0;
-        try {
-            let randomBytes = await Random.blob();
-            randomIndex := Nat.abs(Random.rangeFrom(Nat8.fromNat(jokeCount), randomBytes));
-        } catch (e) {
-            Debug.print("Error generating random number: " # Error.message(e));
-            // If random generation fails, use a fallback method
-            randomIndex := Nat.abs(jokeCount - 1);
-        };
-
-        // Ensure randomIndex is within bounds
-        randomIndex := randomIndex % jokeCount;
+        let randomIndex = nextRandom() % jokeCount;
         
         Debug.print("Returning joke at index: " # debug_show(randomIndex));
         jokes[randomIndex]
@@ -47,5 +45,11 @@ actor DadJokeGenerator {
 
     public func addJoke(newJoke : Text) : async () {
         jokes := Array.append(jokes, [newJoke]);
+        Debug.print("New joke added. Total jokes: " # debug_show(jokes.size()));
+    };
+
+    // Update the seed periodically to increase randomness
+    public func updateSeed() : async () {
+        seed := Nat.abs(Time.now());
     };
 }

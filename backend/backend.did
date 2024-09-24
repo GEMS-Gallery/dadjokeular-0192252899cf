@@ -1,4 +1,5 @@
 service : {
   addJoke: (text) -> ();
-  getRandomJoke: () -> (text);
+  getRandomJoke: () -> (text) query;
+  updateSeed: () -> ();
 }
